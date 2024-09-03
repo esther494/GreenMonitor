@@ -95,16 +95,8 @@ uint32_t light_moisture_dma[2] = {0};
 char received_data[ESP_BUFFER_SIZE];
 char transmit_data[ESP_BUFFER_SIZE];
 
-uint8_t DMA_Buffer;
-uint8_t Data_Index = 0;
-
-char receivedData[ESP_BUFFER_SIZE];
-int bufferIndex = 0;
-char *token;
 int error_code;
 char time[100], temperature[100], humidity[100], uv_index[100], moisture[100], general[100];
-
-int current_screen = 0;
 
 // Parse the received data
 int parsedErrorCode;
@@ -153,9 +145,7 @@ int main(void)
   MX_I2C3_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-  //HAL_UART_Receive_DMA(&huart2, (uint8_t*)command_buffer, sizeof(command_buffer) - 1);
-  //HAL_UART_Receive_DMA(&huart1, &DMA_Buffer, 1);
-  //HAL_Delay(2000);
+
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -207,8 +197,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    //HAL_UART_Receive(&huart1, rxData, sizeof(rxData), HAL_MAX_DELAY);
-    //HAL_UART_Transmit(&huart1, (uint8_t*)"Hello!", 5, 10);
   }
   /* USER CODE END 3 */
 }
@@ -530,40 +518,9 @@ static void MX_GPIO_Init(void)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
   if (huart->Instance == USART1) {
-      //HAL_UART_Receive(&huart1, (uint8_t *)received_data, ESP_BUFFER_SIZE, HAL_MAX_DELAY);
-      received_data[ESP_BUFFER_SIZE - 1] = '\0';
-      // Null-terminate the string
-      //receivedData[BUFFER_SIZE] = '\0';
-
-      // Process the received data
-      // The receivedData array now contains exactly 100 characters, including any padding
-      }
-  // Process the received data as needed
- /*
-  if (huart->Instance == USART1) {
-    // Save the received byte into the array
-    if (Data_Index < ESP_BUFFER_SIZE) {
-      received_data[Data_Index++] = DMA_Buffer;
-
-      // Check if the received byte is the terminator character
-      if (DMA_Buffer == '\n') {
-        // Full transmission received, process the data
-        //Process_Received_Data(Received_Data, Data_Index);
-
-        // Reset the index to start from 0 for the next transmission
-        Data_Index = 0;
-      }
-    } else {
-      // Handle buffer overflow, if necessary
-      //Handle_Buffer_Overflow();
-    } */
-
-  // Re-enable DMA reception for the next byte
-  //HAL_UART_Receive_DMA(huart, &DMA_Buffer, 1);
+    received_data[ESP_BUFFER_SIZE - 1] = '\0';
+  }
 }
-
-
-
 
 /* USER CODE END 4 */
 
@@ -595,30 +552,43 @@ void StartDefaultTask(void const * argument)
 void StartToESP(void const * argument)
 {
   /* USER CODE BEGIN StartToESP */
-  float light_moisture_buffer[2]; // in case buffer data changes due to dma
-  char buffer[100]; // ready to be sent over
+
+  // Define buffers for sensor data
+  float light_moisture_buffer[2]; // Buffer to store light and moisture data
+  char buffer[100];               // Buffer to format data for UART transmission
+
+  // Initialize ADC with DMA
   HAL_ADC_Start_DMA(&hadc1, light_moisture_dma, 2);
+
   /* Infinite loop */
   for(;;)
   {
+    // Read temperature and humidity data
     AM2320_ReadTemperatureAndHumidity(&hi2c1, temperature_humidity_buffer, temperature_humidity_buffer+1);
-    vTaskDelay(pdMS_TO_TICKS(500)); // Need time to receive data
 
-    // until here, we have 1500 ms of delay
+    // Delay to allow data reception
+    vTaskDelay(pdMS_TO_TICKS(500)); // 500 ms delay
 
-    // Format the sensor data and send it over UART
+    // Convert ADC DMA data to float
     light_moisture_buffer[0] = (float)light_moisture_dma[0];
     light_moisture_buffer[1] = (float)light_moisture_dma[1];
 
-    snprintf(buffer, sizeof(buffer), "%.2f,%.2f,%.2f,%.2f\n", temperature_humidity_buffer[0],
-        temperature_humidity_buffer[1], light_moisture_buffer[0], light_moisture_buffer[1]);
+    // Format sensor data for transmission
+    snprintf(buffer, sizeof(buffer), "%.2f,%.2f,%.2f,%.2f\n",
+        temperature_humidity_buffer[0],  // Temperature
+        temperature_humidity_buffer[1],  // Humidity
+        light_moisture_buffer[0],        // Light level
+        light_moisture_buffer[1]);       // Moisture level
 
+    // Transmit formatted data over UART
     HAL_UART_Transmit(&huart1, (uint8_t*)buffer, strlen(buffer), HAL_MAX_DELAY);
-    vTaskDelay(pdMS_TO_TICKS(1000));
 
-    // we have 2500 ms of delay
+    // Delay before the next iteration
+    vTaskDelay(pdMS_TO_TICKS(1000)); // 1000 ms delay
 
-    osDelay(1);
+    // Optional delay
+    osDelay(1); // Small delay to yield control
+
   }
   /* USER CODE END StartToESP */
 }
@@ -633,50 +603,66 @@ void StartToESP(void const * argument)
 void StartFromESP(void const * argument)
 {
   /* USER CODE BEGIN StartFromESP */
-  //HAL_UART_Receive_DMA(&huart1, (uint8_t*)received_data, ESP_BUFFER_SIZE);
-  // Null-terminate the buffer
+
+  // Initialize UART reception in DMA mode
+  // HAL_UART_Receive_DMA(&huart1, (uint8_t*)received_data, ESP_BUFFER_SIZE);
+
+  // Null-terminate the buffer for safety
   received_data[ESP_BUFFER_SIZE - 1] = '\0';
+
+  // Start receiving data over UART with DMA
   HAL_UART_Receive_DMA(&huart1, (uint8_t*)received_data, ESP_BUFFER_SIZE);
 
   /* Infinite loop */
   for(;;)
   {
-    //HAL_UART_Receive(&huart1, (uint8_t*)received_data, ESP_BUFFER_SIZE, HAL_MAX_DELAY);
-    //vTaskDelay(pdMS_TO_TICKS(2000));
+    // Optional: Direct UART receive and delay (commented out)
+    // HAL_UART_Receive(&huart1, (uint8_t*)received_data, ESP_BUFFER_SIZE, HAL_MAX_DELAY);
+    // vTaskDelay(pdMS_TO_TICKS(2000));
 
-    // Start parsing from the second character
+    // Parse the received data starting from the second character
     int result = sscanf(received_data,
-                        "%d,%49[^,],%49[^,],%49[^,],%49[^,],%49[^,],%49[^,]",
-                        &parsedErrorCode,
-                        parsedTime,
-                        parsedTemperature,
-                        parsedHumidity,
-                        parsedUVIndex,
-                        parsedMoisture,
-                        parsedGeneral);
+        "%d,%49[^,],%49[^,],%49[^,],%49[^,],%49[^,],%49[^,]",
+        &parsedErrorCode,
+        parsedTime,
+        parsedTemperature,
+        parsedHumidity,
+        parsedUVIndex,
+        parsedMoisture,
+        parsedGeneral);
 
-    if (result == 7) // Check if all fields were parsed correctly
+    // Check if all fields were parsed successfully
+    if (result == 7)
     {
-        error_code = parsedErrorCode;
-        strncpy(time, parsedTime, sizeof(time) - 1);
-        time[sizeof(time) - 1] = '\0';
-        strncpy(temperature, parsedTemperature, sizeof(temperature) - 1);
-        temperature[sizeof(temperature) - 1] = '\0';
-        strncpy(humidity, parsedHumidity, sizeof(humidity) - 1);
-        humidity[sizeof(humidity) - 1] = '\0';
-        strncpy(uv_index, parsedUVIndex, sizeof(uv_index) - 1);
-        uv_index[sizeof(uv_index) - 1] = '\0';
-        strncpy(moisture, parsedMoisture, sizeof(moisture) - 1);
-        moisture[sizeof(moisture) - 1] = '\0';
-        strncpy(general, parsedGeneral, sizeof(general) - 1);
-        general[sizeof(general) - 1] = '\0';
+      // Update global variables with parsed data
+      error_code = parsedErrorCode;
+
+      // Copy strings and ensure null-termination
+      strncpy(time, parsedTime, sizeof(time) - 1);
+      time[sizeof(time) - 1] = '\0';
+
+      strncpy(temperature, parsedTemperature, sizeof(temperature) - 1);
+      temperature[sizeof(temperature) - 1] = '\0';
+
+      strncpy(humidity, parsedHumidity, sizeof(humidity) - 1);
+      humidity[sizeof(humidity) - 1] = '\0';
+
+      strncpy(uv_index, parsedUVIndex, sizeof(uv_index) - 1);
+      uv_index[sizeof(uv_index) - 1] = '\0';
+
+      strncpy(moisture, parsedMoisture, sizeof(moisture) - 1);
+      moisture[sizeof(moisture) - 1] = '\0';
+
+      strncpy(general, parsedGeneral, sizeof(general) - 1);
+      general[sizeof(general) - 1] = '\0';
     }
 
+    // Small delay to yield control
     osDelay(1);
+
   }
   /* USER CODE END StartFromESP */
 }
-
 
 /* USER CODE BEGIN Header_StartDispScreen */
 /**
@@ -693,7 +679,6 @@ void StartDispScreen(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-
     osDelay(1);
   }
   /* USER CODE END StartDispScreen */

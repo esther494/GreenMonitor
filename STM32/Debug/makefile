@@ -64,8 +64,8 @@ all: main-build
 main-build: GreenMonitor.elf secondary-outputs
 
 # Tool invocations
-GreenMonitor.elf GreenMonitor.map: $(OBJS) $(USER_OBJS) C:\Users\esthe\OneDrive\Documents\GreenMonitor\GreenMonitor\STM32F401RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "GreenMonitor.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\esthe\OneDrive\Documents\GreenMonitor\GreenMonitor\STM32F401RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="GreenMonitor.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+GreenMonitor.elf GreenMonitor.map: $(OBJS) $(USER_OBJS) C:\Users\esthe\OneDrive\Documents\GreenMonitor\STM32\STM32F401RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "GreenMonitor.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\esthe\OneDrive\Documents\GreenMonitor\STM32\STM32F401RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="GreenMonitor.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
