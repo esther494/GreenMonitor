@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "stdint.h": "c",
+        "mock_i2c.h": "c"
+    }
+}

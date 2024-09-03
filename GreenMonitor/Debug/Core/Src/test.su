@@ -1,0 +1,4 @@
+../Core/Src/test.c:10:19:send_test_data_temperature	80	static
+../Core/Src/test.c:18:19:send_test_data_humidity	80	static
+../Core/Src/test.c:26:19:send_test_data_light	80	static
+../Core/Src/test.c:34:19:send_test_data_moisture	80	static

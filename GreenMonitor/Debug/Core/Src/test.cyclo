@@ -1,0 +1,4 @@
+../Core/Src/test.c:10:19:send_test_data_temperature	1
+../Core/Src/test.c:18:19:send_test_data_humidity	1
+../Core/Src/test.c:26:19:send_test_data_light	1
+../Core/Src/test.c:34:19:send_test_data_moisture	1

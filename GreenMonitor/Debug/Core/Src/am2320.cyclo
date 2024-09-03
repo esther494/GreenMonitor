@@ -1,0 +1,4 @@
+../Core/Src/am2320.c:7:19:AM2320_Init	1
+../Core/Src/am2320.c:11:19:AM2320_ReadTemperature	3
+../Core/Src/am2320.c:38:19:AM2320_ReadHumidity	3
+../Core/Src/am2320.c:65:19:AM2320_ReadTemperatureAndHumidity	3
